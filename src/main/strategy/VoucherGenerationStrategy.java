@@ -1,22 +1,18 @@
-public strategy;
+package strategy;
 
+import model.Customer;
+import model.Promotion;
 import model.Train;
-import model.Client;
-import model.Voucher
 
-public VoucherGenerationStrategy implements DiscountStrategy{
-    private final VoucherService VOUCHER_SERVICE;
-    private final double PERCENTAGE_VOUCHER;
+public class VoucherGenerationStrategy implements DiscountStrategy{
+    private final double percentage;
 
-    public VoucherGenerationStrategy(VoucherService voucherService, double percentageVoucher){
-        this.VOUCHER_SERVICE=voucherService;
-        this.PERCENTAGE_VOUCHER=percentageVoucher;
+    public VoucherGenerationStrategy(double percentage){
+        this.percentage=percentage;
     }
 
     @Override
-    public double applyDiscount(double basePrice,Train train, Client client,String promoCode){
-        Voucher buonoSconto= new Voucher(basePrice,PERCENTAGE_VOUCHER, train,promoCode);
-        VOUCHER_SERVICE.add(cliente,buonoSconto);
-        return basePrice;
+    public double applyDiscount(double basePrice,Train train,Client client){
+        return basePrice*percentage;
     }
 }
