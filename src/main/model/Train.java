@@ -66,6 +66,13 @@ public class Train {
         return false;
     }
 
+    public void freeSeat() {
+        if (RESERVABLE && availableSeats >= 0) {
+            availableSeats++;
+        }
+    }
+
+
     public void updateStatus(TrainStatus newStatus){
         this.status=newStatus;
     }
