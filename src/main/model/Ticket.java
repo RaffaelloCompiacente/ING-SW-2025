@@ -1,4 +1,4 @@
-package src.model;
+package model;
 
 import java.time.LocalDateTime;
 
@@ -43,7 +43,7 @@ public class Ticket{
         if(!train.isReservable()){
             throw new IllegalArgumentException("Non è possibile prenotare un treno regionale");
         }
-        Ticker t= new Ticker(train,price,ticketID);
+        Ticket t= new Ticket(train,price,ticketID);
         t.status=TicketStatus.PRENOTATO;
         t.reservedAt=reservedAt;
         return t;

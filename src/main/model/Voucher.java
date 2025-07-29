@@ -1,4 +1,4 @@
-package src.model;
+package model;
 
 import java.time.LocalDate;
 
@@ -7,33 +7,37 @@ public class Voucher{
     private final String VOUCHER_CODE;
     private final double VOUCHER_VALUE;
     private final Train.TrainType TRAIN_TYPE_VALID;//se None il voucher è valido per tutti i treni
+    private final boolean EXPIRES;
+    private boolean used;
     private final LocalDate EXPIRY_DATE;
 
-    public Voucher(double price,double percentage,Train train,String promoCode){
-        this.VOUCHER_VALUE=price*percentage;
-        this.TRAIN_TYPE_VALID=train.getType();
-        this.EXPIRY_DATE=LocalDate.now().plusMonths(1); //Tutti i voucher scadono un mese dopo la loro generazione
-        this.VOUCHER_CODE= generateVoucherCodes(promoCode,percentage);
-    }
-
-    public String generateVoucherCodes(String promoCode,double percentage){
-        int scount=(int) (percentage*100);
-        String scountStr=String.valueOf(scount);
-        String trainTypeStr=(TRAIN_TYPE_VALID != null)? TRAIN_TYPE_VALID.name():"ALL";
-        String codice=promoCode.concat(scountStr).concat(trainTypeStr);
-        return codice;
+    public Voucher(double price,String voucherCode,Train.TrainType trainType,boolean expires){
+        this.VOUCHER_VALUE=price;
+        this.TRAIN_TYPE_VALID=trainType;
+        this.EXPIRES=expires
+        this.EXPIRY_DATE=expires ? LocalDate.now().plusMonths(1):null; //Tutti i voucher scadono un mese dopo la loro generazione
+        this.VOUCHER_CODE=voucherCode ;
+        this.used=false;
     }
 
     public String getVoucherCode(){return VOUCHER_CODE;}
     public double getValue(){return VOUCHER_VALUE;}
     public Train.TrainType getTrainTypeValid(){return TRAIN_TYPE_VALID;}
     public LocalDate getExpiryDate(){return EXPIRY_DATE;}
+    public boolean isUsed() {return used;}
+    public boolean hasExpiry(){return EXPIRES;}
 
-    public boolean isValidFor(Train train){
-        LocalDate today=LocalDate.now();
-        boolean notExpired=!today.isAfter(EXPIRY_DATE);
-        boolean trainMatches=(TRAIN_TYPE_VALID==null || train.getType()==TRAIN_TYPE_VALID);
-        return notExpired && trainMatches;
+    public boolean isValid(){
+        return !used && (!expires || (expiryDate != null && LocalDate.now().isAfter(LocalDate.MIN) && LocalDate.now().isBefore(EXPIRY_DATE)));
+    }
+
+    public boolean isApplicableTo(Ticket ticket){
+        Train.TrainType ticketTrainType=ticket.getTrain().getType();
+        return TRAIN_TYPE_VALID==null || TRAIN_TYPE_VALID==ticketTrainType;
+    }
+
+    public void markAsUsed(){
+        this.used=true;
     }
 
     @Override
