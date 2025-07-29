@@ -1,6 +1,10 @@
 package service;
 
 import model.Train;
+import model.PromoResult;
+import model.DicountResult,
+import model.VoucherResult;
+import model.Promotion;
 import repository.PromotionRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +20,7 @@ public class PromotionService{
         this.promotions=promoRepo.findAllActive();
     }//Utile per amministratori in caso di utilizzo di file json e non di DB
 
-    public List<Promotion> findApplicablePromotions(Train train){
+   /* public List<Promotion> findApplicablePromotions(Train train){
         List<Promotion> result= new ArrayList<>();
         for(Promotion promo: promotions){
             if(promo.getCondition().isApplicabile(train)){
@@ -31,6 +35,24 @@ public class PromotionService{
             finalPrice=promo.getStrategy().apply(finalPrice);
         }
         return finalPrice;
+    }*/
+    public List<PromoResult> evaluatePromotions(Train train,Client client,double basePrice){
+        List<PromoResult> results= new ArrayList<>();
+        for(Promotion promo: promotions){
+            double resultPromo= promo.applyPromotion(basePrice,train.getType(),client);
+            if(resultPromo!=basePrice){
+                results.add(buildPromoResult(promo,resultPromo));
+            }
+        }return results;
+    }
+
+    private PromoResut buildPromoResult(Promotion promo,double resultPromo){
+        PromoStrategy strategy= promo.getStrategy();
+        return switch(strategy){
+            case VoucherGenerationStrategy v -> new VoucherResult(resultPromo,promo.getPromoCode());
+            case FixedAmountDiscountStrategy f -> new DiscountResult(resultPromo,promo.getPromoCode());
+            case PercentageDiscountStrategy p -> new DiscountResult(resultPromo,promo.getPromoCode());
+        }
     }
 
 }
