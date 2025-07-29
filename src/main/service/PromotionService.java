@@ -49,9 +49,9 @@ public class PromotionService{
     private PromoResut buildPromoResult(Promotion promo,double resultPromo){
         PromoStrategy strategy= promo.getStrategy();
         return switch(strategy){
-            case VoucherGenerationStrategy v -> new VoucherResult(resultPromo,promo.getPromoCode());
-            case FixedAmountDiscountStrategy f -> new DiscountResult(resultPromo,promo.getPromoCode());
-            case PercentageDiscountStrategy p -> new DiscountResult(resultPromo,promo.getPromoCode());
+            case VoucherGenerationStrategy v -> new VoucherResult(resultPromo,promo);
+            case FixedAmountDiscountStrategy f -> new DiscountResult(resultPromo,promo);
+            case PercentageDiscountStrategy p -> new DiscountResult(resultPromo,promo);
         }
     }
 

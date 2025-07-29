@@ -1,4 +1,4 @@
-òpackage condition;
+package condition;
 
 import model.Client;
 import model.Train;

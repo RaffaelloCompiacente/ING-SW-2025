@@ -4,15 +4,15 @@ import service.PromoResultVistor;
 
 public class VoucherResult implements PromoResult{
     private final double VOUCHER_VALUE;
-    private final String ORIGIN_PROMO_CODE;
+    private final Promotion ORIGIN_PROMO;
 
-    public VoucherResult(double calulatedValue,String promoCode){
+    public VoucherResult(double calulatedValue,Promotion promo){
         this.VOUCHER_VALUE=calculatedValue;
-        this.ORIGIN_PROMO_CODE=promoCode;
+        this.ORIGIN_PROMO=promo;
     }
 
     public double getVoucherValue(){return this.VOUCHER_VALUE;}
-    public String getOriginPromoCode(){return this.ORIGIN_PROMO_CODE;}
+    public Promotion getOriginPromo(){return this.ORIGIN_PROMO;}
 
     @Override
     public void accept(PromoResultVisitor visitor){

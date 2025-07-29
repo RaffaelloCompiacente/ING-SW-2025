@@ -95,21 +95,21 @@ public class TicketService{
     * */
 
 
-    public double calculateDiscountedPriceWhitPromotions(Train train,double basePrice){
+   /* public double calculateDiscountedPriceWhitPromotions(Train train,double basePrice){
         return PROMOTION_SERVICE.calculateDiscountedPrice(train,basePrice);
     }
 
     public List<Promotion> getActivePromotionsForTrain(Train train){
-        return promotionService.findApplicablePromotions(train);
-    }
+        return PROMOTION_SERVICE.findApplicablePromotions(train);
+    }*/
 
     public List<Voucher> getValidVoucherForCustomer(String customerId,Train train){
-        return voucherService.findAllValidForCustomer(customerID,train);
+        return VOUCHER_SERVICE.findAllValidForCustomer(customerID,train);
     }
 
     public double calculatePriceWithVoucher(Train train,double currentPrice,Voucher selectedVoucher){
         if(selectedVoucher!=null && selectedVoucher.isValidFor(train)){
-            return voucherService.applyVoucher(selectedVoucher,currentPrice)
+            return VOUCHER_SERVICE.applyVoucher(selectedVoucher,currentPrice)
         }
         return currentPrice;
     }
@@ -129,12 +129,17 @@ public class TicketService{
     }
 
 
-    public Ticket purchaseTicket(String customerID,Train train,double basePrice,Voucher chosenVoucher){
+    public Ticket purchaseTicket(Client client,Train train,double basePrice,Voucher chosenVoucher){
         validateTrainAvailability(train);
         if(train.isReservable() && train.getAvailableSeats()<=0){
             throw new IllegalStateException("Posti esauriti per il treno "+train.getTrainID());
         }
-        double finalPrice=promotionService.calculatedDiscountedPrice(train,basePrice);
+        //double finalPrice=PROMOTION_SERVICE.calculatedDiscountedPrice(train,basePrice);
+        List<PromoResult> promosApplication=PROMOTION_SERVICE.evaluatePromotions(train,client,basePrice);
+        double potentialVoucherImport= 0.0;
+        Promotion potentialVoucherPromo=null;
+        double finalPrice=basePrice;
+        handlePromotion(promosApplication,train,client,potentialVoucherImport,potentialVoucherPromo,finalPrice);
         if(chosenVoucher != null){
             if(!chosenVoucher.isValidFor(train)){
                 throw new IllegalArgumentException("Il voucher selezionato non è valido per il tipo di treno");
@@ -142,8 +147,8 @@ public class TicketService{
             /*Controllo ridondante perchè la scelta del Voucher avviene già su una lista filtrata per cliente e treno
              *  Manteniamo comunque come controllo di sicurezza per manomissioni e nel caso di cambi di struttura
              *  */
-            finalPrice=voucherService.applyVoucher(chosenVoucher,finalPrice);
-            voucherService.invalidateVoucher(customerID,chosenVoucher);
+            finalPrice=VOUCHER_SERVICE.applyVoucher(chosenVoucher,finalPrice);
+            VOUCHER_SERVICE.invalidateVoucher(client.getCustomerID(),chosenVoucher);
         }
         boolean booked =train.bookSeat();
         if(!booked){
@@ -152,15 +157,40 @@ public class TicketService{
         String ticketID=generateTicketID();
         //Utilizzo del factory method per la creazione di un biglietto già valido.
         Ticket ticket = Ticket.createConfirmed(train,finalPrice,ticketID)
-        ticketRepo.save(ticket);
-        List<Promotion> appliedPromos= promotionService.findApplicablePromotions(train);
-        for(Promotion promo: appliedPromos){
-            if(promo.getStrategy() instanceof VoucherGenerationStrategy strat){
-                Voucher newVoucher=strat.generateVoucher(train, basePrice);
-                voucherService.assignVoucherToCustomer(customerID,newVoucher);
-            }
+        TICKET_REPO.save(ticket);
+        if(potentialVoucherImport>0){
+                VOUCHER_SERVICE.generateVoucherAfterPurchase(client,potentialVoucherPromo,potentialVoucherImport)
+                //VOUCHER_SERVICE.assignVoucherToCustomer(client.getCustomerID(),newVoucher); rindondante
         }//Se fra le promozioni applicabili c'è una basata su voucher alla finalizzazione del pagamento il voucher verrà creato
         return ticket;
+    }
+
+    public void handlePromotion(List<PromoResult> results,Train train,Client client,double voucherImport,Promotion voucherPromo,double finalPrice){
+        double basePrice=finalPrice;
+        PromoResultVisitor visitor= new PromoResultVisitor()
+        {//Classe anonima
+            @Override
+            public void visit(DiscountResult r){
+                System.out.println("Grazie alla promozione "+r.getOriginPromoCode+" hai diritto a uno sconto sul prezzo base del biglietto");
+                double scount=basePrice-r.getDiscountedPrice();
+                finalPrice-=scount;
+            }
+
+            @Override
+            public void visit(VoucherResult r){
+                /*volendo si può creare anche una lista di Voucher decidere di accreditarli tutti decideremo in futuro
+                Per ora ci limiteremo a prendere il voucher di importo massimo;
+                * */
+                double voucherValue=r.getVoucherValue;
+                if(voucherValue>maxVoucherImport){
+                    voucherPromo=r.getOriginPromo();
+                    maxVoucherImport=voucherValue;
+                }
+            }
+        };
+        for(PromoResult r: results){
+            r.accept(visitor);
+        }
     }
 
     public Ticket reserveTicket(String customerID,Train train,double basePrice){
