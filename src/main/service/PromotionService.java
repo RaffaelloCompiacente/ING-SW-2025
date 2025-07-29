@@ -1,6 +1,6 @@
-package src.service;
+package service;
 
-import src.model.Train;
+import model.Train;
 import repository.PromotionRepository;
 import java.util.ArrayList;
 import java.util.List;

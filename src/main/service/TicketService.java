@@ -1,4 +1,4 @@
-package src.service;
+package service;
 
 import model.Ticket,
 import model.Train;
@@ -25,7 +25,7 @@ public class TicketService{
     private final Map<Train.TrainType,String> letterSuffixes= new HashMap<>();
     private LocalDate lastCounterResetDate=localDate.now();
 
-    public TicketService(PromortionService promotionService,VoucherService voucherService,TicketRespository ticketRepo,CustomerRepository customerRepo,CounterRepository counterRepo){
+    public TicketService(PromotionService promotionService,VoucherService voucherService,TicketRespository ticketRepo,CustomerRepository customerRepo,CounterRepository counterRepo){
         this.PROMOTION_SERVICE=promotionService;
         this.VOUCHER_SERVICE=voucherService;
         this.TICKET_REPO=ticketRepo;
@@ -36,9 +36,7 @@ public class TicketService{
         this.lastCounterResetDate=COUNTER_REPO.loadLastResetDate();
     }
 
-    private void persistCounters() {
-        COUNTER_REPO.save(counters,letterSuffixes,lastCounterResetDate);
-    }
+    private void persistCounters() {COUNTER_REPO.save(counters,letterSuffixes,lastCounterResetDate);}
 
 
     private synchronized String generateTicketID(Train train){
@@ -188,7 +186,7 @@ public class TicketService{
     }
 
     public Ticket finalizeReservedTicket(String reservationID,String customerID,Voucher voucher){
-        Ticker ticket= ticketRepo.findReservationById(reserevationId);
+        Ticket ticket= ticketRepo.findReservationById(reserevationId);
         if(ticket==null || ticket.isPaid()){
             throw new IllegalArgumentException("Prenotazione non valida o già pagata");
         }
@@ -228,4 +226,3 @@ public class TicketService{
 
 
 
-}
